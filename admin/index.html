@@ -33,34 +33,45 @@
   </div>
   <script src="config.js"></script>
   <script>
+    console.log('Supabase loaded:', typeof window.supabase);
+
+    // Check if already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        console.log('Already logged in, redirecting...');
+        window.location.href = 'dashboard.html';
+      }
+    });
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const btn = document.getElementById('loginBtn');
       const errorMsg = document.getElementById('errorMsg');
-      
+
       btn.textContent = 'Inaingia...';
       btn.disabled = true;
       errorMsg.textContent = '';
-      
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        errorMsg.textContent = error.message;
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          errorMsg.textContent = 'Hitilafu: ' + error.message;
+          btn.textContent = 'Ingia';
+          btn.disabled = false;
+          return;
+        }
+
+        console.log('Login successful, redirecting to dashboard...');
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        errorMsg.textContent = 'Hitilafu: ' + err.message;
         btn.textContent = 'Ingia';
         btn.disabled = false;
-        return;
       }
-      
-      window.location.href = 'dashboard.html';
-    });
-    
-    // Check if already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) window.location.href = 'dashboard.html';
     });
   </script>
 </body>
 </html>
-
