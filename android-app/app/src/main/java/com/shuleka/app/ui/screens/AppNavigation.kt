@@ -1,18 +1,12 @@
 package com.shuleka.app.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import com.shuleka.app.data.Post
-import com.shuleka.app.data.SupabaseClient
 
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
@@ -28,11 +22,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
-        enterTransition = { slideInHorizontally(tween(300)) { it } + fadeIn(tween(300)) },
-        exitTransition = { slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(200)) },
-        popEnterTransition = { slideInHorizontally(tween(300)) { -it / 3 } + fadeIn(tween(300)) },
-        popExitTransition = { slideOutHorizontally(tween(300)) { it } + fadeOut(tween(200)) }
+        startDestination = Screen.Home.route
     ) {
         composable(Screen.Home.route) {
             HomeScreen(

@@ -18,9 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shuleka.app.ui.theme.*
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,31 +26,36 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ShulekaTheme {
-                ShulekaNavGraph()
+                App()
             }
         }
     }
 }
 
 @Composable
+fun App() {
+    var showSplash by remember { mutableStateOf(true) }
+
+    if (showSplash) {
+        SplashScreen { showSplash = false }
+    } else {
+        com.shuleka.app.ui.screens.AppNavigation()
+    }
+}
+
+@Composable
 fun SplashScreen(onDone: () -> Unit) {
     val scale = remember { Animatable(0.5f) }
-    val alpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        coroutineScope {
-            launch { alpha.animateTo(1f, animationSpec = tween(500)) }
-            launch {
-                scale.animateTo(
-                    1f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
-                    )
-                )
-            }
-        }
-        delay(1500)
+        scale.animateTo(
+            1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            )
+        )
+        delay(1200)
         onDone()
     }
 
@@ -64,9 +67,7 @@ fun SplashScreen(onDone: () -> Unit) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .scale(scale.value)
-                .graphicsLayer { this.alpha = alpha.value }
+            modifier = Modifier.scale(scale.value)
         ) {
             Text("\uD83D\uDCDA", fontSize = 72.sp)
             Spacer(modifier = Modifier.height(16.dp))
@@ -84,27 +85,6 @@ fun SplashScreen(onDone: () -> Unit) {
                 color = TextOnDark,
                 fontWeight = FontWeight.Medium
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-fun ShulekaNavGraph() {
-    var showSplash by remember { mutableStateOf(true) }
-
-    AnimatedContent(
-        targetState = showSplash,
-        transitionSpec = {
-            fadeIn(tween(300)) + slideInVertically(tween(300)) { it / 4 } togetherWith
-                    fadeOut(tween(300))
-        },
-        label = "splash"
-    ) { isSplash ->
-        if (isSplash) {
-            SplashScreen { showSplash = false }
-        } else {
-            com.shuleka.app.ui.screens.AppNavigation()
         }
     }
 }

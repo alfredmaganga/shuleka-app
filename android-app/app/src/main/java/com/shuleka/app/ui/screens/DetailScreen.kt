@@ -2,7 +2,6 @@ package com.shuleka.app.ui.screens
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -61,16 +59,6 @@ fun DetailScreen(postId: String, onBack: () -> Unit) {
                                 Icon(Icons.Default.OpenInBrowser, contentDescription = "Fungua PDF")
                             }
                         }
-                        IconButton(onClick = {
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, p.title)
-                                putExtra(Intent.EXTRA_TEXT, "${p.title}\n\n${p.body}")
-                            }
-                            context.startActivity(Intent.createChooser(shareIntent, "Shiriki"))
-                        }) {
-                            Icon(Icons.Default.Share, contentDescription = "Shiriki")
-                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -95,11 +83,7 @@ fun DetailScreen(postId: String, onBack: () -> Unit) {
                     modifier = Modifier.fillMaxSize().padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("😔", fontSize = 48.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text("Taarifa haijapatikana", color = TextSecondary)
-                    }
+                    Text("Taarifa haijapatikana", color = TextSecondary)
                 }
             }
             else -> {
@@ -120,7 +104,6 @@ fun DetailScreen(postId: String, onBack: () -> Unit) {
                         .background(Background)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // Hero header
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -144,14 +127,13 @@ fun DetailScreen(postId: String, onBack: () -> Unit) {
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                formatDate(p.createdAt),
+                                com.shuleka.app.ui.screens.formatDate(p.createdAt),
                                 color = Color.White.copy(alpha = 0.7f),
                                 fontSize = 13.sp
                             )
                         }
                     }
 
-                    // Content
                     Column(modifier = Modifier.padding(20.dp)) {
                         if (p.body.isNotBlank()) {
                             Text(
@@ -162,7 +144,6 @@ fun DetailScreen(postId: String, onBack: () -> Unit) {
                             )
                         }
 
-                        // PDF section
                         if (p.pdfUrl != null) {
                             Spacer(modifier = Modifier.height(24.dp))
                             Card(
@@ -174,20 +155,11 @@ fun DetailScreen(postId: String, onBack: () -> Unit) {
                             ) {
                                 Column(modifier = Modifier.padding(20.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("📄", fontSize = 28.sp)
+                                        Text("\uD83D\uDCC4", fontSize = 28.sp)
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column {
-                                            Text(
-                                                "PDF Imepakiwa",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 16.sp,
-                                                color = PrimaryDark
-                                            )
-                                            Text(
-                                                "Bofya kuangalia",
-                                                fontSize = 13.sp,
-                                                color = TextSecondary
-                                            )
+                                            Text("PDF Imepakiwa", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryDark)
+                                            Text("Bofya kuangalia", fontSize = 13.sp, color = TextSecondary)
                                         }
                                     }
                                     Spacer(modifier = Modifier.height(16.dp))
@@ -199,17 +171,11 @@ fun DetailScreen(postId: String, onBack: () -> Unit) {
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(containerColor = Primary)
                                     ) {
-                                        Icon(
-                                            Icons.Default.OpenInBrowser,
-                                            contentDescription = null,
-                                            modifier = Modifier.padding(end = 8.dp)
-                                        )
                                         Text("Fungua PDF")
                                     }
                                 }
                             }
                         }
-
                         Spacer(modifier = Modifier.height(40.dp))
                     }
                 }

@@ -1,7 +1,5 @@
 package com.shuleka.app.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,7 +24,6 @@ import com.shuleka.app.data.Post
 import com.shuleka.app.data.PostCategory
 import com.shuleka.app.data.SupabaseClient
 import com.shuleka.app.ui.theme.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,7 +35,7 @@ fun HomeScreen(onPostClick: (String) -> Unit) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    suspend fun loadPosts() {
+    LaunchedEffect(selectedCategory) {
         isLoading = true
         errorMessage = null
         try {
@@ -49,16 +46,12 @@ fun HomeScreen(onPostClick: (String) -> Unit) {
         isLoading = false
     }
 
-    LaunchedEffect(selectedCategory) {
-        loadPosts()
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("📚", fontSize = 24.sp)
+                        Text("\uD83D\uDCDA", fontSize = 24.sp)
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             "Shuleka",
@@ -73,12 +66,12 @@ fun HomeScreen(onPostClick: (String) -> Unit) {
                     titleContentColor = Color.White
                 ),
                 actions = {
-                    IconButton(onClick = { scope.launch { loadPosts() } }) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Sasisha",
-                            tint = Color.White
-                        )
+                    IconButton(onClick = { scope.launch { 
+                        isLoading = true
+                        try { posts = SupabaseClient.getPosts(selectedCategory) } catch (_: Exception) {}
+                        isLoading = false
+                    } }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Sasisha", tint = Color.White)
                     }
                 }
             )
@@ -90,45 +83,27 @@ fun HomeScreen(onPostClick: (String) -> Unit) {
                 .background(Background)
                 .padding(padding)
         ) {
-            // Category Tabs
-            CategoryTabs(
-                selected = selectedCategory,
-                onSelect = { selectedCategory = it }
-            )
+            CategoryTabs(selected = selectedCategory, onSelect = { selectedCategory = it })
 
-            // Content
             when {
                 isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = Primary)
                     }
                 }
                 errorMessage != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("😔", fontSize = 48.sp)
+                            Text("\uD83D\uDE14", fontSize = 48.sp)
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(errorMessage!!, color = TextSecondary)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { scope.launch { loadPosts() } }) {
-                                Text("Jaribu Tena")
-                            }
                         }
                     }
                 }
                 posts.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("📭", fontSize = 48.sp)
+                            Text("\uD83D\uDCED", fontSize = 48.sp)
                             Spacer(modifier = Modifier.height(12.dp))
                             Text("Hakuna taarifa bado", color = TextSecondary)
                         }
@@ -140,14 +115,8 @@ fun HomeScreen(onPostClick: (String) -> Unit) {
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        itemsIndexed(posts) { index, post ->
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = fadeIn(tween(300, delayMillis = index * 80)) +
-                                        slideInVertically(tween(300, delayMillis = index * 80)) { it / 2 }
-                            ) {
-                                PostCard(post = post, onClick = { onPostClick(post.id) })
-                            }
+                        itemsIndexed(posts) { _, post ->
+                            PostCard(post = post, onClick = { onPostClick(post.id) })
                         }
                     }
                 }
@@ -234,7 +203,7 @@ fun PostCard(post: Post, onClick: () -> Unit) {
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 if (post.pdfUrl != null) {
-                    Text("📄", fontSize = 16.sp)
+                    Text("\uD83D\uDCC4", fontSize = 16.sp)
                 }
             }
 
