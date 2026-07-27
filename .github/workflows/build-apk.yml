@@ -27,31 +27,5 @@ jobs:
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: shuleka-debug-apk
+          name: shuleka-apk
           path: android-app/app/build/outputs/apk/debug/*.apk
-      
-      - name: Generate Keystore
-        if: success()
-        run: |
-          keytool -genkey -v -keystore release.jks \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -alias shuleka \
-            -storepass shuleka2026 -keypass shuleka2026 \
-            -dname "CN=Shuleka,OU=Shuleka,O=Shuleka,L=Dar,ST=Dar,C=TZ"
-      
-      - name: Build Release APK
-        if: success()
-        working-directory: android-app
-        run: |
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=${{ github.workspace }}/release.jks \
-            -Pandroid.injected.signing.store.password=shuleka2026 \
-            -Pandroid.injected.signing.key.alias=shuleka \
-            -Pandroid.injected.signing.key.password=shuleka2026
-      
-      - name: Upload Release APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: shuleka-release-apk
-          path: android-app/app/build/outputs/apk/release/*.apk
