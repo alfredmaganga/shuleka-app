@@ -16,7 +16,10 @@
         <h1 class="logo-text">Shuleka</h1>
         <p class="logo-sub">Admin Panel</p>
       </div>
-      <form id="loginForm">
+      <div id="loadingMsg" style="text-align:center;padding:20px;color:#666;">
+        Inapakia...
+      </div>
+      <form id="loginForm" style="display:none;">
         <div class="form-group">
           <label for="email">Barua pepe</label>
           <input type="email" id="email" placeholder="admin@shuleka.com" required>
@@ -30,54 +33,63 @@
       </form>
     </div>
   </div>
-  <script>
-    // Inline config so there's no race condition
-    const SUPABASE_URL = 'https://uiwgbviucbbqcxdkpdwa.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg';
-  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Now supabase is definitely loaded (var supabase = ...)
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    (function() {
+      var SUPABASE_URL = 'https://uiwgbviucbbqcxdkpdwa.supabase.co';
+      var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg';
 
-    async function init() {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) {
-        window.location.href = 'dashboard.html';
-        return;
+      // Wait for Supabase to be available
+      function waitForSupabase(cb) {
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+          cb();
+        } else {
+          setTimeout(function() { waitForSupabase(cb); }, 100);
+        }
       }
 
-      document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const btn = document.getElementById('loginBtn');
-        const errorMsg = document.getElementById('errorMsg');
+      waitForSupabase(function() {
+        var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'block';
 
-        btn.textContent = 'Inaingia...';
-        btn.disabled = true;
-        errorMsg.textContent = '';
-
-        try {
-          const { data, error } = await sb.auth.signInWithPassword({ email, password });
-
-          if (error) {
-            errorMsg.textContent = 'Hitilafu: ' + error.message;
-            btn.textContent = 'Ingia';
-            btn.disabled = false;
+        // Check existing session
+        sb.auth.getSession().then(function(result) {
+          if (result.data && result.data.session) {
+            window.location.href = 'dashboard.html';
             return;
           }
+        }).catch(function() {});
 
-          await sb.auth.getSession();
-          window.location.href = 'dashboard.html';
-        } catch (err) {
-          errorMsg.textContent = 'Hitilafu: ' + err.message;
-          btn.textContent = 'Ingia';
-          btn.disabled = false;
-        }
+        // Handle login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+          e.preventDefault();
+          var email = document.getElementById('email').value.trim();
+          var password = document.getElementById('password').value;
+          var btn = document.getElementById('loginBtn');
+          var errorMsg = document.getElementById('errorMsg');
+
+          btn.textContent = 'Inaingia...';
+          btn.disabled = true;
+          errorMsg.textContent = '';
+
+          sb.auth.signInWithPassword({ email: email, password: password }).then(function(result) {
+            if (result.error) {
+              errorMsg.textContent = 'Hitilafu: ' + result.error.message;
+              btn.textContent = 'Ingia';
+              btn.disabled = false;
+              return;
+            }
+            // Session stored successfully, redirect
+            window.location.href = 'dashboard.html';
+          }).catch(function(err) {
+            errorMsg.textContent = 'Hitilafu: ' + err.message;
+            btn.textContent = 'Ingia';
+            btn.disabled = false;
+          });
+        });
       });
-    }
-    init();
+    })();
   </script>
 </body>
 </html>
