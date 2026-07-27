@@ -18,7 +18,7 @@ object SupabaseClient {
 
     suspend fun getPosts(category: String? = null): List<Post> {
         return try {
-            val posts = client.from("posts").select(Columns.ALL).decodeList<Post>()
+            val posts = client.from("posts").select(Columns.ALL) {}.decodeList<Post>()
             val sorted = posts.sortedByDescending { it.createdAt }
             if (category != null && category != "all") {
                 sorted.filter { it.category.equals(category, ignoreCase = true) }
