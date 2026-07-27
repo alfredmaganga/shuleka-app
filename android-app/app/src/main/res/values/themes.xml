@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.Shuleka" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">#4F46E5</item>
-    </style>
-</resources>

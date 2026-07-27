@@ -1,7 +1,6 @@
 package com.shuleka.app
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -17,115 +16,88 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shuleka.app.data.Post
-import com.shuleka.app.data.SupabaseClient
-import com.shuleka.app.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ShulekaTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    HomeScreen()
-                }
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = Color(0xFFF5F5F5)
+            ) {
+                ShulekaApp()
             }
         }
     }
 }
 
+data class Post(
+    val id: String,
+    val title: String,
+    val body: String,
+    val category: String
+)
+
 @Composable
-fun HomeScreen() {
+fun ShulekaApp() {
     var posts by remember { mutableStateOf(listOf<Post>()) }
-    var isLoading by remember { mutableStateOf(true) }
+    var loading by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        posts = SupabaseClient.getPosts()
-        isLoading = false
+        try {
+            val result = withContext(Dispatchers.IO) {
+                val url = URL("https://uiwgbviucbbqcxdkpdwa.supabase.co/rest/v1/posts?select=*&order=created_at.desc")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.setRequestProperty("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg")
+                conn.setRequestProperty("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg")
+                val text = conn.inputStream.bufferedReader().readText()
+                conn.disconnect()
+                val arr = JSONArray(text)
+                val list = mutableListOf<Post>()
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    list.add(Post(o.optString("id",""), o.optString("title",""), o.optString("body",""), o.optString("category","")))
+                }
+                list
+            }
+            posts = result
+        } catch (e: Exception) {
+            posts = listOf(Post("", "Error", e.message ?: "unknown", "error"))
+        }
+        loading = false
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top bar
-        Surface(
-            color = Primary,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Shuleka",
-                modifier = Modifier.padding(16.dp),
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
+        Surface(color = Color(0xFF4F46E5), modifier = Modifier.fillMaxWidth()) {
+            Text("Shuleka", modifier = Modifier.padding(16.dp), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
 
-        if (isLoading) {
+        if (loading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Primary)
-            }
-        } else if (posts.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Hakuna taarifa bado", color = Color.Gray)
+                CircularProgressIndicator()
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(posts) { post ->
-                    PostCard(post)
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(post.category.uppercase(), fontSize = 11.sp, color = Color(0xFF6B7280), fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(post.title, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                            if (post.body.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(post.body.take(150), fontSize = 14.sp, color = Color.Gray)
+                            }
+                        }
+                    }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun PostCard(post: Post) {
-    val bgColor = when (post.category) {
-        "matokeo" -> Color(0xFF3B82F6)
-        "taarifa" -> Color(0xFF22C55E)
-        "notes" -> Color(0xFFF59E0B)
-        "vipimo" -> Color(0xFF8B5CF6)
-        else -> Color(0xFF6B7280)
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = bgColor.copy(alpha = 0.15f)
-            ) {
-                Text(
-                    text = post.category.uppercase(),
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    color = bgColor,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = post.title,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold
-            )
-            if (post.body.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = post.body.take(150),
-                    fontSize = 14.sp,
-                    color = Color.Gray,
-                    lineHeight = 20.sp
-                )
             }
         }
     }
