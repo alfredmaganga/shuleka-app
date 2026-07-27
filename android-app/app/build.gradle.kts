@@ -12,7 +12,7 @@ android {
         applicationId = "com.shuleka.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 12
+        versionCode = 13
         versionName = "5.0"
     }
 
@@ -47,10 +47,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.core:core-splashscreen:1.0.1")
     
-    // OneSignal SDK
-    implementation("com.onesignal:OneSignal:5.1.0")
-    
-    // Firebase
+    // Firebase Cloud Messaging (for receiving push notifications)
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-messaging")
 }
