@@ -6,7 +6,6 @@
   <title>Shuleka — Admin Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="login-page">
@@ -31,11 +30,18 @@
       </form>
     </div>
   </div>
-  <script src="config.js"></script>
   <script>
+    // Inline config so there's no race condition
+    const SUPABASE_URL = 'https://uiwgbviucbbqcxdkpdwa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg';
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Now supabase is definitely loaded (var supabase = ...)
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     async function init() {
-      // Check if already logged in
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await sb.auth.getSession();
       if (session) {
         window.location.href = 'dashboard.html';
         return;
@@ -52,18 +58,23 @@
         btn.disabled = true;
         errorMsg.textContent = '';
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        try {
+          const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
-        if (error) {
-          errorMsg.textContent = 'Hitilafu: ' + error.message;
+          if (error) {
+            errorMsg.textContent = 'Hitilafu: ' + error.message;
+            btn.textContent = 'Ingia';
+            btn.disabled = false;
+            return;
+          }
+
+          await sb.auth.getSession();
+          window.location.href = 'dashboard.html';
+        } catch (err) {
+          errorMsg.textContent = 'Hitilafu: ' + err.message;
           btn.textContent = 'Ingia';
           btn.disabled = false;
-          return;
         }
-
-        // Wait for session to be stored before redirecting
-        await supabase.auth.getSession();
-        window.location.href = 'dashboard.html';
       });
     }
     init();
