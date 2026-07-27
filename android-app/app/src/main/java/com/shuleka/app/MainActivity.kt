@@ -18,7 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shuleka.app.ui.theme.*
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,17 +40,17 @@ fun SplashScreen(onDone: () -> Unit) {
     val alpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        launch {
-            alpha.animateTo(1f, animationSpec = tween(500))
-        }
-        launch {
-            scale.animateTo(
-                1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
+        coroutineScope {
+            launch { alpha.animateTo(1f, animationSpec = tween(500)) }
+            launch {
+                scale.animateTo(
+                    1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
                 )
-            )
+            }
         }
         delay(1500)
         onDone()

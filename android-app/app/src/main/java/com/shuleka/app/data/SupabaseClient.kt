@@ -3,7 +3,6 @@ package com.shuleka.app.data
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.query.select
 
 object SupabaseClient {
     private const val SUPABASE_URL = "https://uiwgbviucbbqcxdkpdwa.supabase.co"
@@ -18,9 +17,7 @@ object SupabaseClient {
 
     suspend fun getPosts(category: String? = null): List<Post> {
         return try {
-            val posts = client.from("posts").select {
-                // select all columns
-            }.decodeList<Post>()
+            val posts = client.from("posts").select().decodeList<Post>()
             if (category != null && category != "all") {
                 posts.filter { it.category.equals(category, ignoreCase = true) }
             } else {
