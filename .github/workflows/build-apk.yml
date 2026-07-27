@@ -17,21 +17,41 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       
-      - name: Decode Keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android-app/app/release-keystore.jks
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
       
-      - name: Build APK
+      - name: Build Debug APK
         working-directory: android-app
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=release-keystore.jks \
-            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleDebug
       
-      - name: Upload APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: shuleka-apk
+          name: shuleka-debug-apk
+          path: android-app/app/build/outputs/apk/debug/*.apk
+      
+      - name: Generate Keystore
+        if: success()
+        run: |
+          keytool -genkey -v -keystore release.jks \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias shuleka \
+            -storepass shuleka2026 -keypass shuleka2026 \
+            -dname "CN=Shuleka,OU=Shuleka,O=Shuleka,L=Dar,ST=Dar,C=TZ"
+      
+      - name: Build Release APK
+        if: success()
+        working-directory: android-app
+        run: |
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=${{ github.workspace }}/release.jks \
+            -Pandroid.injected.signing.store.password=shuleka2026 \
+            -Pandroid.injected.signing.key.alias=shuleka \
+            -Pandroid.injected.signing.key.password=shuleka2026
+      
+      - name: Upload Release APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shuleka-release-apk
           path: android-app/app/build/outputs/apk/release/*.apk
