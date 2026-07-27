@@ -33,28 +33,25 @@
   </div>
   <script src="config.js"></script>
   <script>
-    console.log('Supabase loaded:', typeof window.supabase);
-
-    // Check if already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function init() {
+      // Check if already logged in
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        console.log('Already logged in, redirecting...');
         window.location.href = 'dashboard.html';
+        return;
       }
-    });
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const btn = document.getElementById('loginBtn');
-      const errorMsg = document.getElementById('errorMsg');
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const btn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
 
-      btn.textContent = 'Inaingia...';
-      btn.disabled = true;
-      errorMsg.textContent = '';
+        btn.textContent = 'Inaingia...';
+        btn.disabled = true;
+        errorMsg.textContent = '';
 
-      try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
@@ -64,14 +61,12 @@
           return;
         }
 
-        console.log('Login successful, redirecting to dashboard...');
+        // Wait for session to be stored before redirecting
+        await supabase.auth.getSession();
         window.location.href = 'dashboard.html';
-      } catch (err) {
-        errorMsg.textContent = 'Hitilafu: ' + err.message;
-        btn.textContent = 'Ingia';
-        btn.disabled = false;
-      }
-    });
+      });
+    }
+    init();
   </script>
 </body>
 </html>
