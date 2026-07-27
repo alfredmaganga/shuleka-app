@@ -17,10 +17,6 @@ class ShulekaApplication : Application() {
         OneSignal.initWithContext(this)
         OneSignal.setAppId(ONESIGNAL_APP_ID)
         
-        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE)
-        
-        OneSignal.promptForPushNotifications()
-        
         Log.d(TAG, "OneSignal initialized with App ID: $ONESIGNAL_APP_ID")
     }
 }

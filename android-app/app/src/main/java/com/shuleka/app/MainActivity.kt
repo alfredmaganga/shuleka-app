@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.onesignal.OneSignal
 import java.net.HttpURLConnection
 import java.net.URL
 
