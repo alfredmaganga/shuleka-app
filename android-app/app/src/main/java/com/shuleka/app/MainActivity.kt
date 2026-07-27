@@ -13,11 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shuleka.app.navigation.ShulekaNavGraph
 import com.shuleka.app.ui.theme.*
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +50,7 @@ fun SplashScreen(onDone: () -> Unit) {
                 )
             )
         }
-        kotlinx.coroutines.delay(1500)
+        delay(1500)
         onDone()
     }
 
@@ -61,9 +62,11 @@ fun SplashScreen(onDone: () -> Unit) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.scale(scale.value).alpha(alpha.value)
+            modifier = Modifier
+                .scale(scale.value)
+                .graphicsLayer { this.alpha = alpha.value }
         ) {
-            Text("📚", fontSize = 72.sp)
+            Text("\uD83D\uDCDA", fontSize = 72.sp)
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 "SHULEKA",
