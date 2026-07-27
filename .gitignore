@@ -19,3 +19,6 @@ node_modules/
 *.apk
 *.zip
 apk_output/
+
+# Firebase
+google-services.json

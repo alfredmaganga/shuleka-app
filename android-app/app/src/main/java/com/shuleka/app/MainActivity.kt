@@ -11,7 +11,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -21,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.onesignal.OneSignal
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -41,7 +41,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var errorContainer: View
     private lateinit var retryButton: View
     private lateinit var adapter: PostAdapter
-    private lateinit var notificationHelper: NotificationHelper
 
     private var allPosts = listOf<Post>()
     private var selectedCategory = "Zote"
@@ -54,10 +53,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Setup notifications
-        notificationHelper = NotificationHelper(this)
-        notificationHelper.createNotificationChannel()
-        notificationHelper.startPeriodicCheck()
+        // Request notification permission for Android 13+
         requestNotificationPermission()
 
         tabContainer = findViewById(R.id.tabContainer)
@@ -257,7 +253,5 @@ class MainActivity : AppCompatActivity() {
         if (allPosts.isEmpty()) {
             loadPosts()
         }
-        // Check for new posts when app resumes
-        notificationHelper.checkNow()
     }
 }

@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -11,8 +12,8 @@ android {
         applicationId = "com.shuleka.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 11
-        versionName = "4.1"
+        versionCode = 12
+        versionName = "5.0"
     }
 
     buildTypes {
@@ -45,4 +46,11 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.0.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.core:core-splashscreen:1.0.1")
+    
+    // OneSignal SDK
+    implementation("com.onesignal:OneSignal:5.1.0")
+    
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
 }

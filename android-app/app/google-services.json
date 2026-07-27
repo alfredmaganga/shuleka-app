@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "740279081109",
+    "project_id": "jarib-1d2fd",
+    "storage_bucket": "jarib-1d2fd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:740279081109:android:4186867495bc10c1e7e39c",
+        "android_client_info": {
+          "package_name": "com.shuleka.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCe5sPMCb_8wAbBYTxGlLPCxGjgg9QeBvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
