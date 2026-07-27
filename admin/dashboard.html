@@ -22,27 +22,13 @@
   </nav>
 
   <main class="main-content">
-    <!-- Stats -->
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-number" id="totalPosts">0</div>
-        <div class="stat-label">Posts</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="totalMatokeo">0</div>
-        <div class="stat-label">Matokeo</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="totalTaarifa">0</div>
-        <div class="stat-label">Taarifa</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="totalNotes">0</div>
-        <div class="stat-label">Notes</div>
-      </div>
+      <div class="stat-card"><div class="stat-number" id="totalPosts">0</div><div class="stat-label">Posts</div></div>
+      <div class="stat-card"><div class="stat-number" id="totalMatokeo">0</div><div class="stat-label">Matokeo</div></div>
+      <div class="stat-card"><div class="stat-number" id="totalTaarifa">0</div><div class="stat-label">Taarifa</div></div>
+      <div class="stat-card"><div class="stat-number" id="totalNotes">0</div><div class="stat-label">Notes</div></div>
     </div>
 
-    <!-- Create Post -->
     <div class="card" id="createSection">
       <h2 class="section-title">Andika Post Mpya</h2>
       <form id="postForm">
@@ -80,7 +66,6 @@
       </form>
     </div>
 
-    <!-- Posts List -->
     <div class="card">
       <div class="section-header">
         <h2 class="section-title">Posts Zote</h2>
@@ -137,8 +122,8 @@
           <h3 class="post-title">${escapeHtml(p.title)}</h3>
           <p class="post-body">${escapeHtml((p.body || '').substring(0, 120))}${(p.body || '').length > 120 ? '...' : ''}</p>
           <div class="post-actions">
-            ${p.pdf_url ? `<a href="${p.pdf_url}" target="_blank" class="btn-sm">📄 PDF</a>` : ''}
-            <button class="btn-sm btn-danger" onclick="deletePost('${p.id}')">🗑 Futa</button>
+            ${p.pdf_url ? '<a href="' + p.pdf_url + '" target="_blank" class="btn-sm">📄 PDF</a>' : ''}
+            <button class="btn-sm btn-danger" onclick="deletePost(\'' + p.id + '\')">🗑 Futa</button>
           </div>
         </div>
       `).join('');
@@ -162,7 +147,6 @@
       return div.innerHTML;
     }
 
-    // Create post
     document.getElementById('postForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = document.getElementById('postTitle').value;
@@ -172,15 +156,15 @@
       const btn = document.getElementById('submitBtn');
       const successMsg = document.getElementById('successMsg');
       const errorMsg = document.getElementById('errorMsg');
-      
+
       btn.textContent = 'Inatuma...';
       btn.disabled = true;
       successMsg.textContent = '';
       errorMsg.textContent = '';
-      
+
       let pdf_url = null;
       if (pdfFile) {
-        const filePath = `pdfs/${Date.now()}_${pdfFile.name}`;
+        const filePath = 'pdfs/' + Date.now() + '_' + pdfFile.name;
         const { error: uploadError } = await supabase.storage.from('post-files').upload(filePath, pdfFile);
         if (uploadError) {
           errorMsg.textContent = 'Hitilafu ya kupakia PDF: ' + uploadError.message;
@@ -191,11 +175,11 @@
         const { data: urlData } = supabase.storage.from('post-files').getPublicUrl(filePath);
         pdf_url = urlData.publicUrl;
       }
-      
+
       const { error } = await supabase.from('posts').insert({
         title, body, category, pdf_url, created_by: currentUser.id
       });
-      
+
       if (error) {
         errorMsg.textContent = 'Hitilafu: ' + error.message;
       } else {
@@ -220,15 +204,13 @@
       window.location.href = 'index.html';
     }
 
-    // File upload UI
     document.getElementById('fileUploadArea').addEventListener('click', () => document.getElementById('postPdf').click());
     document.getElementById('postPdf').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        document.getElementById('fileLabel').innerHTML = `<span class="file-icon">✅</span><span>${file.name}</span>`;
+        document.getElementById('fileLabel').innerHTML = '<span class="file-icon">✅</span><span>' + file.name + '</span>';
       }
     });
-
     document.getElementById('filterCategory').addEventListener('change', loadPosts);
     init();
   </script>
