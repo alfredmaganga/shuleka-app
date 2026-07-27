@@ -6,7 +6,6 @@
   <title>Shuleka — Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="dashboard-page">
@@ -29,15 +28,15 @@
       <div class="stat-card"><div class="stat-number" id="totalNotes">0</div><div class="stat-label">Notes</div></div>
     </div>
 
-    <div class="card" id="createSection">
+    <div class="card">
       <h2 class="section-title">Andika Post Mpya</h2>
       <form id="postForm">
         <div class="form-group">
-          <label for="postTitle">Kichwa cha habari</label>
-          <input type="text" id="postTitle" placeholder="Mf: Matokeo ya Mtihani wa Desemba" required>
+          <label>Kichwa cha habari</label>
+          <input type="text" id="postTitle" placeholder="Mf: Matokeo ya Mtihani" required>
         </div>
         <div class="form-group">
-          <label for="postCategory">Aina</label>
+          <label>Aina</label>
           <select id="postCategory" required>
             <option value="matokeo">Matokeo ya Mtihani</option>
             <option value="taarifa">Taarifa za Shule</option>
@@ -47,11 +46,11 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="postBody">Maudhui</label>
+          <label>Maudhui</label>
           <textarea id="postBody" rows="6" placeholder="Andika taarifa hapa..."></textarea>
         </div>
         <div class="form-group">
-          <label for="postPdf">PDF (hiari)</label>
+          <label>PDF (hiari)</label>
           <div class="file-upload" id="fileUploadArea">
             <input type="file" id="postPdf" accept=".pdf" hidden>
             <div class="file-upload-label" id="fileLabel">
@@ -82,12 +81,17 @@
     </div>
   </main>
 
-  <script src="config.js"></script>
   <script>
+    const SUPABASE_URL = 'https://uiwgbviucbbqcxdkpdwa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg';
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let currentUser = null;
 
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await sb.auth.getSession();
       if (!session) {
         window.location.href = 'index.html';
         return;
@@ -98,8 +102,8 @@
     }
 
     async function loadPosts() {
-      let query = supabase.from('posts').select('*').order('created_at', { ascending: false });
       const filter = document.getElementById('filterCategory').value;
+      let query = sb.from('posts').select('*').order('created_at', { ascending: false });
       if (filter !== 'all') query = query.eq('category', filter);
       const { data, error } = await query;
       if (error) { console.error(error); return; }
@@ -113,79 +117,75 @@
         container.innerHTML = '<p class="empty-text">Hakuna posts bado.</p>';
         return;
       }
-      container.innerHTML = posts.map(p => `
-        <div class="post-item" data-id="${p.id}">
-          <div class="post-meta">
-            <span class="category-badge ${p.category}">${categoryLabel(p.category)}</span>
-            <span class="post-date">${new Date(p.created_at).toLocaleDateString('sw-TZ')}</span>
-          </div>
-          <h3 class="post-title">${escapeHtml(p.title)}</h3>
-          <p class="post-body">${escapeHtml((p.body || '').substring(0, 120))}${(p.body || '').length > 120 ? '...' : ''}</p>
-          <div class="post-actions">
-            ${p.pdf_url ? '<a href="' + p.pdf_url + '" target="_blank" class="btn-sm">📄 PDF</a>' : ''}
-            <button class="btn-sm btn-danger" onclick="deletePost(\'' + p.id + '\')">🗑 Futa</button>
-          </div>
-        </div>
-      `).join('');
+      container.innerHTML = posts.map(function(p) {
+        var labels = { matokeo: 'Matokeo', taarifa: 'Taarifa', notes: 'Notes', vipimo: 'Vipimo', mengineyo: 'Mengineyo' };
+        var label = labels[p.category] || p.category;
+        return '<div class="post-item">' +
+          '<div class="post-meta">' +
+            '<span class="category-badge ' + p.category + '">' + label + '</span>' +
+            '<span class="post-date">' + new Date(p.created_at).toLocaleDateString('sw-TZ') + '</span>' +
+          '</div>' +
+          '<h3 class="post-title">' + escapeHtml(p.title) + '</h3>' +
+          '<p class="post-body">' + escapeHtml((p.body || '').substring(0, 120)) + '</p>' +
+          '<div class="post-actions">' +
+            (p.pdf_url ? '<a href="' + p.pdf_url + '" target="_blank" class="btn-sm">PDF</a>' : '') +
+            '<button class="btn-sm btn-danger" onclick="deletePost(\'' + p.id + '\')">Futa</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
     }
 
     function updateStats(posts) {
       document.getElementById('totalPosts').textContent = posts.length;
-      document.getElementById('totalMatokeo').textContent = posts.filter(p => p.category === 'matokeo').length;
-      document.getElementById('totalTaarifa').textContent = posts.filter(p => p.category === 'taarifa').length;
-      document.getElementById('totalNotes').textContent = posts.filter(p => p.category === 'notes').length;
-    }
-
-    function categoryLabel(cat) {
-      const labels = { matokeo: 'Matokeo', taarifa: 'Taarifa', notes: 'Notes', vipimo: 'Vipimo', mengineyo: 'Mengineyo' };
-      return labels[cat] || cat;
+      document.getElementById('totalMatokeo').textContent = posts.filter(function(p) { return p.category === 'matokeo'; }).length;
+      document.getElementById('totalTaarifa').textContent = posts.filter(function(p) { return p.category === 'taarifa'; }).length;
+      document.getElementById('totalNotes').textContent = posts.filter(function(p) { return p.category === 'notes'; }).length;
     }
 
     function escapeHtml(text) {
-      const div = document.createElement('div');
+      var div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
 
-    document.getElementById('postForm').addEventListener('submit', async (e) => {
+    document.getElementById('postForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const title = document.getElementById('postTitle').value;
-      const body = document.getElementById('postBody').value;
-      const category = document.getElementById('postCategory').value;
-      const pdfFile = document.getElementById('postPdf').files[0];
-      const btn = document.getElementById('submitBtn');
-      const successMsg = document.getElementById('successMsg');
-      const errorMsg = document.getElementById('errorMsg');
+      var title = document.getElementById('postTitle').value;
+      var body = document.getElementById('postBody').value;
+      var category = document.getElementById('postCategory').value;
+      var pdfFile = document.getElementById('postPdf').files[0];
+      var btn = document.getElementById('submitBtn');
+      var successMsg = document.getElementById('successMsg');
+      var errorMsg = document.getElementById('errorMsg');
 
       btn.textContent = 'Inatuma...';
       btn.disabled = true;
       successMsg.textContent = '';
       errorMsg.textContent = '';
 
-      let pdf_url = null;
+      var pdf_url = null;
       if (pdfFile) {
-        const filePath = 'pdfs/' + Date.now() + '_' + pdfFile.name;
-        const { error: uploadError } = await supabase.storage.from('post-files').upload(filePath, pdfFile);
+        var filePath = 'pdfs/' + Date.now() + '_' + pdfFile.name;
+        var { error: uploadError } = await sb.storage.from('post-files').upload(filePath, pdfFile);
         if (uploadError) {
-          errorMsg.textContent = 'Hitilafu ya kupakia PDF: ' + uploadError.message;
+          errorMsg.textContent = 'Hitilafu PDF: ' + uploadError.message;
           btn.textContent = 'Tuma Post';
           btn.disabled = false;
           return;
         }
-        const { data: urlData } = supabase.storage.from('post-files').getPublicUrl(filePath);
+        var { data: urlData } = sb.storage.from('post-files').getPublicUrl(filePath);
         pdf_url = urlData.publicUrl;
       }
 
-      const { error } = await supabase.from('posts').insert({
-        title, body, category, pdf_url, created_by: currentUser.id
+      var { error } = await sb.from('posts').insert({
+        title: title, body: body, category: category, pdf_url: pdf_url, created_by: currentUser.id
       });
 
       if (error) {
         errorMsg.textContent = 'Hitilafu: ' + error.message;
       } else {
-        successMsg.textContent = '✅ Post imetumwa!';
+        successMsg.textContent = 'Post imetumwa!';
         document.getElementById('postForm').reset();
-        document.getElementById('fileLabel').innerHTML = '<span class="file-icon">📎</span><span>Bofya kuweka PDF</span>';
         loadPosts();
       }
       btn.textContent = 'Tuma Post';
@@ -194,21 +194,23 @@
 
     async function deletePost(id) {
       if (!confirm('Futa post hii?')) return;
-      const { error } = await supabase.from('posts').delete().eq('id', id);
+      var { error } = await sb.from('posts').delete().eq('id', id);
       if (error) { alert('Hitilafu: ' + error.message); return; }
       loadPosts();
     }
 
     async function handleLogout() {
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       window.location.href = 'index.html';
     }
 
-    document.getElementById('fileUploadArea').addEventListener('click', () => document.getElementById('postPdf').click());
-    document.getElementById('postPdf').addEventListener('change', (e) => {
-      const file = e.target.files[0];
+    document.getElementById('fileUploadArea').addEventListener('click', function() {
+      document.getElementById('postPdf').click();
+    });
+    document.getElementById('postPdf').addEventListener('change', function(e) {
+      var file = e.target.files[0];
       if (file) {
-        document.getElementById('fileLabel').innerHTML = '<span class="file-icon">✅</span><span>' + file.name + '</span>';
+        document.getElementById('fileLabel').innerHTML = '<span class="file-icon">&#10003;</span><span>' + file.name + '</span>';
       }
     });
     document.getElementById('filterCategory').addEventListener('change', loadPosts);
