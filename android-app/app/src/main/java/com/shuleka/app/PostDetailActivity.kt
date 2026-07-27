@@ -3,13 +3,10 @@ package com.shuleka.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 class PostDetailActivity : AppCompatActivity() {
 
@@ -38,15 +35,15 @@ class PostDetailActivity : AppCompatActivity() {
         detailDate.text = formatDate(createdAt)
 
         if (pdfUrl.isNotBlank()) {
-            pdfButton.visibility = View.VISIBLE
+            pdfButton.visibility = android.view.View.VISIBLE
             pdfButton.setOnClickListener {
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl))
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl))
-                    startActivity(Intent.createChooser(intent, "Fungua PDF"))
+                // Open PDF inside the app
+                val intent = Intent(this, PdfViewerActivity::class.java).apply {
+                    putExtra("pdfUrl", pdfUrl)
+                    putExtra("title", title)
                 }
+                startActivity(intent)
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
             }
         }
 
@@ -68,8 +65,8 @@ class PostDetailActivity : AppCompatActivity() {
     private fun formatDate(dateStr: String): String {
         return try {
             if (dateStr.isBlank()) return ""
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
-            val outputFormat = SimpleDateFormat("dd MMMM yyyy 'saa' HH:mm", Locale.US)
+            val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+            val outputFormat = java.text.SimpleDateFormat("dd MMMM yyyy 'saa' HH:mm", java.util.Locale.US)
             val date = inputFormat.parse(dateStr.replace("Z", "").take(19))
             if (date != null) outputFormat.format(date) else dateStr.take(10)
         } catch (e: Exception) {

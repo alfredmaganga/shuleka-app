@@ -1,17 +1,21 @@
 package com.shuleka.app
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -19,8 +23,6 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.net.HttpURLConnection
 import java.net.URL
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         private const val SUPABASE_URL = "https://uiwgbviucbbqcxdkpdwa.supabase.co"
         private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg"
         private val CATEGORIES = listOf("Zote", "Matokeo", "Taarifa", "Notes", "Vipimo", "Matukio")
+        private const val NOTIFICATION_PERMISSION_CODE = 1001
     }
 
     private lateinit var tabContainer: LinearLayout
@@ -38,14 +41,24 @@ class MainActivity : AppCompatActivity() {
     private lateinit var errorContainer: View
     private lateinit var retryButton: View
     private lateinit var adapter: PostAdapter
+    private lateinit var notificationHelper: NotificationHelper
 
     private var allPosts = listOf<Post>()
     private var selectedCategory = "Zote"
     private var tabViews = mutableListOf<View>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { false }
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Setup notifications
+        notificationHelper = NotificationHelper(this)
+        notificationHelper.createNotificationChannel()
+        notificationHelper.startPeriodicCheck()
+        requestNotificationPermission()
 
         tabContainer = findViewById(R.id.tabContainer)
         postList = findViewById(R.id.postList)
@@ -61,6 +74,19 @@ class MainActivity : AppCompatActivity() {
         setupRetry()
 
         loadPosts()
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    NOTIFICATION_PERMISSION_CODE
+                )
+            }
+        }
     }
 
     private fun setupTabs() {
@@ -185,8 +211,6 @@ class MainActivity : AppCompatActivity() {
                         swipeRefresh.isRefreshing = false
                     }
                 } else {
-                    val errorText = conn.errorStream?.bufferedReader()?.readText() ?: "Unknown error"
-                    conn.disconnect()
                     runOnUiThread {
                         showError("Hitilafu ya mtandao: $responseCode")
                         swipeRefresh.isRefreshing = false
@@ -233,5 +257,7 @@ class MainActivity : AppCompatActivity() {
         if (allPosts.isEmpty()) {
             loadPosts()
         }
+        // Check for new posts when app resumes
+        notificationHelper.checkNow()
     }
 }

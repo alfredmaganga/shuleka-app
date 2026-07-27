@@ -11,8 +11,8 @@ android {
         applicationId = "com.shuleka.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 10
-        versionName = "4.0"
+        versionCode = 11
+        versionName = "4.1"
     }
 
     buildTypes {
@@ -44,4 +44,5 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.viewpager2:viewpager2:1.0.0")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
