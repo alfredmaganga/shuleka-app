@@ -92,6 +92,12 @@
     (function() {
       var SUPABASE_URL = 'https://uiwgbviucbbqcxdkpdwa.supabase.co';
       var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg';
+      
+      // OneSignal Configuration
+      // TODO: Replace with your OneSignal App ID and REST API Key from https://onesignal.com
+      var ONESIGNAL_APP_ID = '4e418ddf-7c60-4054-a3ad-c7c473c5b8ac';
+      var ONESIGNAL_REST_API_KEY = 'BJHMGV_JAtRKCD5gsFBigcUfOERLv_RSmGzJ01SSdkUv5IoEGeuc8GOUb99IsmB9Oz9imOXE93aRNo8cf_u2stg';
+      
       var sb = null;
       var currentUser = null;
 
@@ -121,6 +127,49 @@
           loadPosts();
         }).catch(function() {
           window.location.href = 'index.html';
+        });
+      }
+
+      // Send push notification via OneSignal
+      function sendPushNotification(title, body, category) {
+        var categoryLabels = {
+          matokeo: '📋 Matokeo',
+          taarifa: '📢 Taarifa',
+          notes: '📝 Notes',
+          vipimo: '🧪 Vipimo',
+          mengineyo: '📌 Mengineyo'
+        };
+        var heading = categoryLabels[category] || '📚 Shuleka';
+        
+        var payload = {
+          app_id: ONESIGNAL_APP_ID,
+          headings: { en: heading },
+          contents: { en: title },
+          subtitle: { en: body ? body.substring(0, 100) : '' },
+          included_segments: ['Total Subscriptions'],
+          name: 'Shuleka Post'
+        };
+
+        return fetch('https://onesignal.com/api/v1/notifications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + ONESIGNAL_REST_API_KEY
+          },
+          body: JSON.stringify(payload)
+        }).then(function(response) {
+          return response.json();
+        }).then(function(data) {
+          if (data.id) {
+            console.log('Push notification sent:', data.id);
+            return true;
+          } else {
+            console.error('Push notification failed:', data);
+            return false;
+          }
+        }).catch(function(err) {
+          console.error('Push notification error:', err);
+          return false;
         });
       }
 
@@ -196,10 +245,19 @@
             if (result.error) {
               errorMsg.textContent = 'Hitilafu: ' + result.error.message;
             } else {
-              successMsg.textContent = 'Post imetumwa!';
+              successMsg.textContent = 'Post imetumwa! 📚';
               document.getElementById('postForm').reset();
               document.getElementById('fileLabel').innerHTML = '<span class="file-icon">📎</span><span>Bofya kuweka PDF</span>';
               loadPosts();
+              
+              // Send push notification to all users
+              sendPushNotification(title, body, category).then(function(sent) {
+                if (sent) {
+                  successMsg.textContent = 'Post imetumwa na notification imetumwa! 📚✅';
+                } else {
+                  successMsg.textContent = 'Post imetumwa (notification haikuweza kutumwa)';
+                }
+              });
             }
             btn.textContent = 'Tuma Post';
             btn.disabled = false;
