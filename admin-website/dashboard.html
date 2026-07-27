@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shuleka — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-page">
+  <nav class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">📚</span>
+      <span class="topbar-title">Shuleka</span>
+    </div>
+    <div class="topbar-right">
+      <span id="adminEmail" class="admin-badge"></span>
+      <button class="btn-logout" onclick="handleLogout()">Ondoka</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="totalPosts">0</div>
+        <div class="stat-label">Posts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalMatokeo">0</div>
+        <div class="stat-label">Matokeo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalTaarifa">0</div>
+        <div class="stat-label">Taarifa</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalNotes">0</div>
+        <div class="stat-label">Notes</div>
+      </div>
+    </div>
+
+    <!-- Create Post -->
+    <div class="card" id="createSection">
+      <h2 class="section-title">Andika Post Mpya</h2>
+      <form id="postForm">
+        <div class="form-group">
+          <label for="postTitle">Kichwa cha habari</label>
+          <input type="text" id="postTitle" placeholder="Mf: Matokeo ya Mtihani wa Desemba" required>
+        </div>
+        <div class="form-group">
+          <label for="postCategory">Aina</label>
+          <select id="postCategory" required>
+            <option value="matokeo">Matokeo ya Mtihani</option>
+            <option value="taarifa">Taarifa za Shule</option>
+            <option value="notes">Vidokezo / Notes</option>
+            <option value="vipimo">Vipimo</option>
+            <option value="mengineyo">Mengineyo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="postBody">Maudhui</label>
+          <textarea id="postBody" rows="6" placeholder="Andika taarifa hapa..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="postPdf">PDF (hiari)</label>
+          <div class="file-upload" id="fileUploadArea">
+            <input type="file" id="postPdf" accept=".pdf" hidden>
+            <div class="file-upload-label" id="fileLabel">
+              <span class="file-icon">📎</span>
+              <span>Bofya kuweka PDF</span>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" id="submitBtn">Tuma Post</button>
+        <p class="success-text" id="successMsg"></p>
+        <p class="error-text" id="errorMsg"></p>
+      </form>
+    </div>
+
+    <!-- Posts List -->
+    <div class="card">
+      <div class="section-header">
+        <h2 class="section-title">Posts Zote</h2>
+        <select id="filterCategory" class="filter-select">
+          <option value="all">Zote</option>
+          <option value="matokeo">Matokeo</option>
+          <option value="taarifa">Taarifa</option>
+          <option value="notes">Notes</option>
+          <option value="vipimo">Vipimo</option>
+          <option value="mengineyo">Mengineyo</option>
+        </select>
+      </div>
+      <div id="postsList" class="posts-list"></div>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script>
+    let currentUser = null;
+
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = 'index.html';
+        return;
+      }
+      currentUser = session.user;
+      document.getElementById('adminEmail').textContent = currentUser.email;
+      loadPosts();
+    }
+
+    async function loadPosts() {
+      let query = supabase.from('posts').select('*').order('created_at', { ascending: false });
+      const filter = document.getElementById('filterCategory').value;
+      if (filter !== 'all') query = query.eq('category', filter);
+      const { data, error } = await query;
+      if (error) { console.error(error); return; }
+      renderPosts(data || []);
+      updateStats(data || []);
+    }
+
+    function renderPosts(posts) {
+      const container = document.getElementById('postsList');
+      if (posts.length === 0) {
+        container.innerHTML = '<p class="empty-text">Hakuna posts bado.</p>';
+        return;
+      }
+      container.innerHTML = posts.map(p => `
+        <div class="post-item" data-id="${p.id}">
+          <div class="post-meta">
+            <span class="category-badge ${p.category}">${categoryLabel(p.category)}</span>
+            <span class="post-date">${new Date(p.created_at).toLocaleDateString('sw-TZ')}</span>
+          </div>
+          <h3 class="post-title">${escapeHtml(p.title)}</h3>
+          <p class="post-body">${escapeHtml((p.body || '').substring(0, 120))}${(p.body || '').length > 120 ? '...' : ''}</p>
+          <div class="post-actions">
+            ${p.pdf_url ? `<a href="${p.pdf_url}" target="_blank" class="btn-sm">📄 PDF</a>` : ''}
+            <button class="btn-sm btn-danger" onclick="deletePost('${p.id}')">🗑 Futa</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateStats(posts) {
+      document.getElementById('totalPosts').textContent = posts.length;
+      document.getElementById('totalMatokeo').textContent = posts.filter(p => p.category === 'matokeo').length;
+      document.getElementById('totalTaarifa').textContent = posts.filter(p => p.category === 'taarifa').length;
+      document.getElementById('totalNotes').textContent = posts.filter(p => p.category === 'notes').length;
+    }
+
+    function categoryLabel(cat) {
+      const labels = { matokeo: 'Matokeo', taarifa: 'Taarifa', notes: 'Notes', vipimo: 'Vipimo', mengineyo: 'Mengineyo' };
+      return labels[cat] || cat;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Create post
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('postTitle').value;
+      const body = document.getElementById('postBody').value;
+      const category = document.getElementById('postCategory').value;
+      const pdfFile = document.getElementById('postPdf').files[0];
+      const btn = document.getElementById('submitBtn');
+      const successMsg = document.getElementById('successMsg');
+      const errorMsg = document.getElementById('errorMsg');
+      
+      btn.textContent = 'Inatuma...';
+      btn.disabled = true;
+      successMsg.textContent = '';
+      errorMsg.textContent = '';
+      
+      let pdf_url = null;
+      if (pdfFile) {
+        const filePath = `pdfs/${Date.now()}_${pdfFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('post-files').upload(filePath, pdfFile);
+        if (uploadError) {
+          errorMsg.textContent = 'Hitilafu ya kupakia PDF: ' + uploadError.message;
+          btn.textContent = 'Tuma Post';
+          btn.disabled = false;
+          return;
+        }
+        const { data: urlData } = supabase.storage.from('post-files').getPublicUrl(filePath);
+        pdf_url = urlData.publicUrl;
+      }
+      
+      const { error } = await supabase.from('posts').insert({
+        title, body, category, pdf_url, created_by: currentUser.id
+      });
+      
+      if (error) {
+        errorMsg.textContent = 'Hitilafu: ' + error.message;
+      } else {
+        successMsg.textContent = '✅ Post imetumwa!';
+        document.getElementById('postForm').reset();
+        document.getElementById('fileLabel').innerHTML = '<span class="file-icon">📎</span><span>Bofya kuweka PDF</span>';
+        loadPosts();
+      }
+      btn.textContent = 'Tuma Post';
+      btn.disabled = false;
+    });
+
+    async function deletePost(id) {
+      if (!confirm('Futa post hii?')) return;
+      const { error } = await supabase.from('posts').delete().eq('id', id);
+      if (error) { alert('Hitilafu: ' + error.message); return; }
+      loadPosts();
+    }
+
+    async function handleLogout() {
+      await supabase.auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    // File upload UI
+    document.getElementById('fileUploadArea').addEventListener('click', () => document.getElementById('postPdf').click());
+    document.getElementById('postPdf').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        document.getElementById('fileLabel').innerHTML = `<span class="file-icon">✅</span><span>${file.name}</span>`;
+      }
+    });
+
+    document.getElementById('filterCategory').addEventListener('change', loadPosts);
+    init();
+  </script>
+</body>
+</html>

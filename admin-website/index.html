@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shuleka — Admin Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-page">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo-section">
+        <div class="logo-icon">📚</div>
+        <h1 class="logo-text">Shuleka</h1>
+        <p class="logo-sub">Admin Panel</p>
+      </div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Barua pepe</label>
+          <input type="email" id="email" placeholder="admin@shuleka.com" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Neno la siri</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-primary" id="loginBtn">Ingia</button>
+        <p class="error-text" id="errorMsg"></p>
+      </form>
+    </div>
+  </div>
+  <script src="config.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('loginBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      
+      btn.textContent = 'Inaingia...';
+      btn.disabled = true;
+      errorMsg.textContent = '';
+      
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        errorMsg.textContent = error.message;
+        btn.textContent = 'Ingia';
+        btn.disabled = false;
+        return;
+      }
+      
+      window.location.href = 'dashboard.html';
+    });
+    
+    // Check if already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) window.location.href = 'dashboard.html';
+    });
+  </script>
+</body>
+</html>
