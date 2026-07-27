@@ -82,3 +82,4 @@ Ask Codex to generate a keystore, then add to GitHub Secrets:
 3. Test all screens
 4. Turn off internet → test offline behavior
 5. Close app → reopen → check state
+
