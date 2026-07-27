@@ -1,64 +1,53 @@
 package com.shuleka.app.data
 
 import android.util.Log
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import java.net.HttpURLConnection
+import java.net.URL
 
 object SupabaseClient {
-    private const val TAG = "SupabaseClient"
-    private const val SUPABASE_URL = "https://uiwgbviucbbqcxdkpdwa.supabase.co"
-    private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg"
+    private const val TAG = "Shuleka"
+    private const val BASE = "https://uiwgbviucbbqcxdkpdwa.supabase.co"
+    private const val KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpd2didml1Y2JicWN4ZGtwZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzI4MjIsImV4cCI6MjEwMDc0ODgyMn0.FN3z7fr4sbkMCIlTq_pXxccz0a-kqBUXghksoFYKJWg"
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        coerceInputValues = true
-    }
-
-    private val httpClient by lazy {
+    suspend fun getPosts(category: String? = null): List<Post> = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Creating HTTP client...")
-            HttpClient(CIO) {
-                install(ContentNegotiation) {
-                    json(this@SupabaseClient.json)
-                }
-                engine {
-                    requestTimeout = 15000
-                }
-            }.also {
-                Log.d(TAG, "HTTP client created successfully")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create HTTP client", e)
-            throw e
-        }
-    }
+            val url = URL("$BASE/rest/v1/posts?select=*&order=created_at.desc")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.setRequestProperty("apikey", KEY)
+            conn.setRequestProperty("Authorization", "Bearer $KEY")
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
 
-    suspend fun getPosts(category: String? = null): List<Post> {
-        return try {
-            Log.d(TAG, "Fetching posts for category: $category")
-            val url = "$SUPABASE_URL/rest/v1/posts?select=*&order=created_at.desc"
-            val response = httpClient.get(url) {
-                header("apikey", SUPABASE_ANON_KEY)
-                header("Authorization", "Bearer $SUPABASE_ANON_KEY")
+            val response = conn.inputStream.bufferedReader().readText()
+            conn.disconnect()
+
+            val array = JSONArray(response)
+            val posts = mutableListOf<Post>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                posts.add(
+                    Post(
+                        id = obj.optString("id", ""),
+                        title = obj.optString("title", ""),
+                        body = obj.optString("body", ""),
+                        category = obj.optString("category", ""),
+                        pdfUrl = obj.optString("pdf_url", ""),
+                        createdAt = obj.optString("created_at", "")
+                    )
+                )
             }
-            val text = response.bodyAsText()
-            Log.d(TAG, "Response length: ${text.length}")
-            val posts = json.decodeFromString<List<Post>>(text)
-            Log.d(TAG, "Parsed ${posts.size} posts")
+
+            Log.d(TAG, "Loaded ${posts.size} posts")
             if (category != null && category != "all") {
                 posts.filter { it.category.equals(category, ignoreCase = true) }
             } else {
                 posts
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching posts", e)
+            Log.e(TAG, "Error loading posts", e)
             emptyList()
         }
     }
